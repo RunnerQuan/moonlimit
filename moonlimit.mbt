@@ -37,6 +37,13 @@ pub fn Decision::remaining(self : Decision) -> Int {
   }
 }
 
+pub fn Decision::reset_after_ms(self : Decision) -> Int {
+  match self {
+    Allowed(info) => info.reset_after_ms
+    Rejected(_) => 0
+  }
+}
+
 fn positive(value : Int, fallback : Int) -> Int {
   if value > 0 { value } else { fallback }
 }
@@ -281,6 +288,54 @@ pub fn SlidingWindow::allow_at(
     Rejected({
       retry_after_ms: self.window_start_ms + self.window_ms - now_ms,
       reason: "sliding window limit exceeded",
+    })
+  }
+}
+
+pub(all) struct Gcra {
+  interval_ms : Int
+  burst_capacity : Int
+  mut theoretical_arrival_ms : Int
+} derive(Debug)
+
+pub fn Gcra::new(
+  limit : Int,
+  period_ms : Int,
+  burst_capacity? : Int = 1,
+  start_ms? : Int = 0,
+) -> Gcra {
+  let safe_limit = positive(limit, 1)
+  Gcra::{
+    interval_ms: positive(positive(period_ms, 1) / safe_limit, 1),
+    burst_capacity: positive(burst_capacity, 1),
+    theoretical_arrival_ms: start_ms,
+  }
+}
+
+pub fn Gcra::allow_at(
+  self : Gcra,
+  now_ms : Int,
+  cost? : Int = 1,
+) -> Decision {
+  let need = positive(cost, 1)
+  let tolerance = (self.burst_capacity - 1) * self.interval_ms
+  let earliest = self.theoretical_arrival_ms - tolerance
+  if now_ms < earliest {
+    Rejected({
+      retry_after_ms: earliest - now_ms,
+      reason: "gcra limit exceeded",
+    })
+  } else {
+    let base = if now_ms > self.theoretical_arrival_ms {
+      now_ms
+    } else {
+      self.theoretical_arrival_ms
+    }
+    self.theoretical_arrival_ms = base + need * self.interval_ms
+    let next_earliest = self.theoretical_arrival_ms - tolerance
+    Allowed({
+      remaining: 0,
+      reset_after_ms: clamp_non_negative(next_earliest - now_ms),
     })
   }
 }

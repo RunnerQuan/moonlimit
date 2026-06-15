@@ -92,3 +92,21 @@ test "sliding window allows after previous window weight decays" {
   inspect(allowed.is_allowed(), content="true")
   inspect(allowed.remaining(), content="0")
 }
+
+test "gcra allows configured burst then rejects" {
+  let limiter = @moonlimit.Gcra::new(1, 1000, burst_capacity=2)
+  inspect(limiter.allow_at(0).is_allowed(), content="true")
+  inspect(limiter.allow_at(0).is_allowed(), content="true")
+  let rejected = limiter.allow_at(0)
+  inspect(rejected.is_allowed(), content="false")
+  inspect(rejected.retry_after_ms(), content="1000")
+}
+
+test "gcra admits once theoretical arrival catches up" {
+  let limiter = @moonlimit.Gcra::new(1, 1000, burst_capacity=1)
+  inspect(limiter.allow_at(0).is_allowed(), content="true")
+  inspect(limiter.allow_at(999).is_allowed(), content="false")
+  let allowed = limiter.allow_at(1000)
+  inspect(allowed.is_allowed(), content="true")
+  inspect(allowed.reset_after_ms(), content="1000")
+}
