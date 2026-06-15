@@ -36,3 +36,22 @@ test "token bucket refills over time" {
   inspect(allowed.is_allowed(), content="true")
   inspect(allowed.remaining(), content="0")
 }
+
+test "leaky bucket admits until full" {
+  let bucket = @moonlimit.LeakyBucket::new(2, 1, 1000)
+  inspect(bucket.allow_at(0).is_allowed(), content="true")
+  inspect(bucket.allow_at(0).is_allowed(), content="true")
+  let rejected = bucket.allow_at(0)
+  inspect(rejected.is_allowed(), content="false")
+  inspect(rejected.retry_after_ms(), content="1000")
+}
+
+test "leaky bucket drains before next admission" {
+  let bucket = @moonlimit.LeakyBucket::new(2, 1, 1000)
+  ignore(bucket.allow_at(0))
+  ignore(bucket.allow_at(0))
+  inspect(bucket.allow_at(999).is_allowed(), content="false")
+  let allowed = bucket.allow_at(1000)
+  inspect(allowed.is_allowed(), content="true")
+  inspect(allowed.remaining(), content="0")
+}

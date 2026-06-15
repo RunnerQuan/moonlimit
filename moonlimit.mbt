@@ -112,3 +112,60 @@ pub fn TokenBucket::allow_at(
     })
   }
 }
+
+pub(all) struct LeakyBucket {
+  capacity : Int
+  leak_tokens : Int
+  leak_period_ms : Int
+  mut level : Int
+  mut last_leak_ms : Int
+} derive(Debug)
+
+pub fn LeakyBucket::new(
+  capacity : Int,
+  leak_tokens : Int,
+  leak_period_ms : Int,
+  start_ms? : Int = 0,
+) -> LeakyBucket {
+  LeakyBucket::{
+    capacity: positive(capacity, 1),
+    leak_tokens: positive(leak_tokens, 1),
+    leak_period_ms: positive(leak_period_ms, 1),
+    level: 0,
+    last_leak_ms: start_ms,
+  }
+}
+
+fn LeakyBucket::drain(self : LeakyBucket, now_ms : Int) -> Unit {
+  let elapsed = now_ms - self.last_leak_ms
+  if elapsed <= 0 {
+    return
+  }
+  let leaked = elapsed * self.leak_tokens / self.leak_period_ms
+  if leaked > 0 {
+    self.level = clamp_non_negative(self.level - leaked)
+    self.last_leak_ms = now_ms
+  }
+}
+
+pub fn LeakyBucket::allow_at(
+  self : LeakyBucket,
+  now_ms : Int,
+  cost? : Int = 1,
+) -> Decision {
+  let need = positive(cost, 1)
+  self.drain(now_ms)
+  if self.level + need <= self.capacity {
+    self.level = self.level + need
+    Allowed({
+      remaining: self.capacity - self.level,
+      reset_after_ms: 0,
+    })
+  } else {
+    let overflow = self.level + need - self.capacity
+    Rejected({
+      retry_after_ms: ceil_div(overflow * self.leak_period_ms, self.leak_tokens),
+      reason: "leaky bucket full",
+    })
+  }
+}
