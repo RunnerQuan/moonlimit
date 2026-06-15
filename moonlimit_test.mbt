@@ -73,3 +73,22 @@ test "fixed window resets on next window" {
   inspect(allowed.is_allowed(), content="true")
   inspect(allowed.remaining(), content="0")
 }
+
+test "sliding window rejects weighted previous traffic" {
+  let limiter = @moonlimit.SlidingWindow::new(2, 1000)
+  inspect(limiter.allow_at(0).is_allowed(), content="true")
+  inspect(limiter.allow_at(0).is_allowed(), content="true")
+  let rejected = limiter.allow_at(1000)
+  inspect(rejected.is_allowed(), content="false")
+  inspect(rejected.retry_after_ms(), content="1000")
+}
+
+test "sliding window allows after previous window weight decays" {
+  let limiter = @moonlimit.SlidingWindow::new(2, 1000)
+  ignore(limiter.allow_at(0))
+  ignore(limiter.allow_at(0))
+  inspect(limiter.allow_at(1499).is_allowed(), content="false")
+  let allowed = limiter.allow_at(1500)
+  inspect(allowed.is_allowed(), content="true")
+  inspect(allowed.remaining(), content="0")
+}

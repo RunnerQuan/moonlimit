@@ -219,3 +219,68 @@ pub fn FixedWindow::allow_at(
     })
   }
 }
+
+pub(all) struct SlidingWindow {
+  limit : Int
+  window_ms : Int
+  mut window_start_ms : Int
+  mut current_count : Int
+  mut previous_count : Int
+} derive(Debug)
+
+pub fn SlidingWindow::new(
+  limit : Int,
+  window_ms : Int,
+  start_ms? : Int = 0,
+) -> SlidingWindow {
+  SlidingWindow::{
+    limit: positive(limit, 1),
+    window_ms: positive(window_ms, 1),
+    window_start_ms: start_ms,
+    current_count: 0,
+    previous_count: 0,
+  }
+}
+
+fn SlidingWindow::roll(self : SlidingWindow, now_ms : Int) -> Unit {
+  if now_ms < self.window_start_ms + self.window_ms {
+    return
+  }
+  let elapsed = now_ms - self.window_start_ms
+  let windows = positive(elapsed / self.window_ms, 1)
+  if windows == 1 {
+    self.previous_count = self.current_count
+  } else {
+    self.previous_count = 0
+  }
+  self.current_count = 0
+  self.window_start_ms = self.window_start_ms + windows * self.window_ms
+}
+
+fn SlidingWindow::estimated(self : SlidingWindow, now_ms : Int) -> Int {
+  let elapsed = clamp_non_negative(now_ms - self.window_start_ms)
+  let remaining = clamp_non_negative(self.window_ms - elapsed)
+  self.current_count + ceil_div(self.previous_count * remaining, self.window_ms)
+}
+
+pub fn SlidingWindow::allow_at(
+  self : SlidingWindow,
+  now_ms : Int,
+  cost? : Int = 1,
+) -> Decision {
+  let need = positive(cost, 1)
+  self.roll(now_ms)
+  let estimate = self.estimated(now_ms)
+  if estimate + need <= self.limit {
+    self.current_count = self.current_count + need
+    Allowed({
+      remaining: self.limit - estimate - need,
+      reset_after_ms: self.window_start_ms + self.window_ms - now_ms,
+    })
+  } else {
+    Rejected({
+      retry_after_ms: self.window_start_ms + self.window_ms - now_ms,
+      reason: "sliding window limit exceeded",
+    })
+  }
+}
