@@ -1,5 +1,5 @@
 import {
-  "zhengjq33/moonlimit" @moonlimit
+  "RunnerQuan/moonlimit" @moonlimit
 }
 
 options(

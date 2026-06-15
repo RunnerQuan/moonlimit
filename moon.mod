@@ -9,13 +9,13 @@
 //   "moonbitlang/x@0.4.6",
 // }
 
-name = "zhengjq33/moonlimit"
+name = "RunnerQuan/moonlimit"
 
 version = "0.1.0"
 
 readme = "README.mbt.md"
 
-repository = "https://github.com/zhengjq33/moonlimit"
+repository = "https://github.com/RunnerQuan/moonlimit"
 
 license = "Apache-2.0"
 
