@@ -339,3 +339,82 @@ pub fn Gcra::allow_at(
     })
   }
 }
+
+pub(all) struct KeyedTokenBucket {
+  capacity : Int
+  refill_tokens : Int
+  refill_period_ms : Int
+  mut buckets : @hashmap.HashMap[String, TokenBucket]
+  mut last_seen : @hashmap.HashMap[String, Int]
+} derive(Debug)
+
+pub fn KeyedTokenBucket::new(
+  capacity : Int,
+  refill_tokens : Int,
+  refill_period_ms : Int,
+) -> KeyedTokenBucket {
+  KeyedTokenBucket::{
+    capacity: positive(capacity, 1),
+    refill_tokens: positive(refill_tokens, 1),
+    refill_period_ms: positive(refill_period_ms, 1),
+    buckets: @hashmap.HashMap([]),
+    last_seen: @hashmap.HashMap([]),
+  }
+}
+
+fn KeyedTokenBucket::bucket_for(
+  self : KeyedTokenBucket,
+  key : String,
+  now_ms : Int,
+) -> TokenBucket {
+  match self.buckets.get(key) {
+    Some(bucket) => bucket
+    None => {
+      let bucket = TokenBucket::new(
+        self.capacity,
+        self.refill_tokens,
+        self.refill_period_ms,
+        start_ms=now_ms,
+      )
+      self.buckets.set(key, bucket)
+      bucket
+    }
+  }
+}
+
+pub fn KeyedTokenBucket::allow_at(
+  self : KeyedTokenBucket,
+  key : String,
+  now_ms : Int,
+  cost? : Int = 1,
+) -> Decision {
+  let bucket = self.bucket_for(key, now_ms)
+  self.last_seen.set(key, now_ms)
+  bucket.allow_at(now_ms, cost~)
+}
+
+pub fn KeyedTokenBucket::len(self : KeyedTokenBucket) -> Int {
+  self.buckets.length()
+}
+
+pub fn KeyedTokenBucket::prune_idle(
+  self : KeyedTokenBucket,
+  now_ms : Int,
+  max_idle_ms : Int,
+) -> Int {
+  let deadline = now_ms - positive(max_idle_ms, 1)
+  let keys = self.last_seen.keys().to_array()
+  let mut removed = 0
+  for key in keys {
+    match self.last_seen.get(key) {
+      Some(last) =>
+        if last < deadline {
+          self.last_seen.remove(key)
+          self.buckets.remove(key)
+          removed = removed + 1
+        }
+      None => ()
+    }
+  }
+  removed
+}

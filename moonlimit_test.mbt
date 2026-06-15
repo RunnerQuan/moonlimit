@@ -110,3 +110,19 @@ test "gcra admits once theoretical arrival catches up" {
   inspect(allowed.is_allowed(), content="true")
   inspect(allowed.reset_after_ms(), content="1000")
 }
+
+test "keyed token bucket isolates keys" {
+  let limiter = @moonlimit.KeyedTokenBucket::new(1, 1, 1000)
+  inspect(limiter.allow_at("alice", 0).is_allowed(), content="true")
+  inspect(limiter.allow_at("alice", 0).is_allowed(), content="false")
+  inspect(limiter.allow_at("bob", 0).is_allowed(), content="true")
+  inspect(limiter.len(), content="2")
+}
+
+test "keyed token bucket prunes idle keys" {
+  let limiter = @moonlimit.KeyedTokenBucket::new(1, 1, 1000)
+  ignore(limiter.allow_at("alice", 0))
+  ignore(limiter.allow_at("bob", 500))
+  inspect(limiter.prune_idle(2000, 1000), content="2")
+  inspect(limiter.len(), content="0")
+}
