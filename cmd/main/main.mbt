@@ -1,7 +1,17 @@
-///|
-/// Entry point for the CLI or runnable program in this template.
-/// Keep main focused; move logic into the library package.
-/// Run with `moon run cmd/main` from the project root.
 fn main {
-  println("Hello")
+  let limiter = @moonlimit.TokenBucket::new(2, 1, 1000)
+  let requests = [0, 0, 0, 1000, 1500, 2000]
+  println("MoonLimit token bucket demo")
+  for now_ms in requests {
+    let decision = limiter.allow_at(now_ms)
+    if decision.is_allowed() {
+      println(
+        "\{now_ms}ms allow remaining=\{decision.remaining()} reset=\{decision.reset_after_ms()}ms",
+      )
+    } else {
+      println(
+        "\{now_ms}ms reject retry_after=\{decision.retry_after_ms()}ms",
+      )
+    }
+  }
 }
