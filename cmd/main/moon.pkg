@@ -1,0 +1,7 @@
+// import {
+//   "username/moonlimit" @lib,
+// }
+
+options(
+  "is-main": true,
+)
