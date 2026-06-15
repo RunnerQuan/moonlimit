@@ -49,3 +49,66 @@ pub fn ceil_div(numerator : Int, denominator : Int) -> Int {
 pub fn clamp_non_negative(value : Int) -> Int {
   if value < 0 { 0 } else { value }
 }
+
+pub(all) struct TokenBucket {
+  capacity : Int
+  refill_tokens : Int
+  refill_period_ms : Int
+  mut tokens : Int
+  mut last_refill_ms : Int
+} derive(Debug)
+
+pub fn TokenBucket::new(
+  capacity : Int,
+  refill_tokens : Int,
+  refill_period_ms : Int,
+  start_ms? : Int = 0,
+) -> TokenBucket {
+  let cap = positive(capacity, 1)
+  TokenBucket::{
+    capacity: cap,
+    refill_tokens: positive(refill_tokens, 1),
+    refill_period_ms: positive(refill_period_ms, 1),
+    tokens: cap,
+    last_refill_ms: start_ms,
+  }
+}
+
+fn TokenBucket::refill(self : TokenBucket, now_ms : Int) -> Unit {
+  let elapsed = now_ms - self.last_refill_ms
+  if elapsed <= 0 {
+    return
+  }
+  let gained = elapsed * self.refill_tokens / self.refill_period_ms
+  if gained > 0 {
+    self.tokens = if self.tokens + gained > self.capacity {
+      self.capacity
+    } else {
+      self.tokens + gained
+    }
+    self.last_refill_ms = now_ms
+  }
+}
+
+pub fn TokenBucket::allow_at(
+  self : TokenBucket,
+  now_ms : Int,
+  cost? : Int = 1,
+) -> Decision {
+  let need = positive(cost, 1)
+  self.refill(now_ms)
+  if self.tokens >= need {
+    self.tokens = self.tokens - need
+    Allowed({
+      remaining: self.tokens,
+      reset_after_ms: 0,
+    })
+  } else {
+    let missing = need - self.tokens
+    let retry = ceil_div(missing * self.refill_period_ms, self.refill_tokens)
+    Rejected({
+      retry_after_ms: retry,
+      reason: "token bucket exhausted",
+    })
+  }
+}
