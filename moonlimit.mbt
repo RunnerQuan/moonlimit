@@ -169,3 +169,53 @@ pub fn LeakyBucket::allow_at(
     })
   }
 }
+
+pub(all) struct FixedWindow {
+  limit : Int
+  window_ms : Int
+  mut window_start_ms : Int
+  mut used : Int
+} derive(Debug)
+
+pub fn FixedWindow::new(
+  limit : Int,
+  window_ms : Int,
+  start_ms? : Int = 0,
+) -> FixedWindow {
+  FixedWindow::{
+    limit: positive(limit, 1),
+    window_ms: positive(window_ms, 1),
+    window_start_ms: start_ms,
+    used: 0,
+  }
+}
+
+fn FixedWindow::roll(self : FixedWindow, now_ms : Int) -> Unit {
+  if now_ms >= self.window_start_ms + self.window_ms {
+    let elapsed = now_ms - self.window_start_ms
+    let windows = positive(elapsed / self.window_ms, 1)
+    self.window_start_ms = self.window_start_ms + windows * self.window_ms
+    self.used = 0
+  }
+}
+
+pub fn FixedWindow::allow_at(
+  self : FixedWindow,
+  now_ms : Int,
+  cost? : Int = 1,
+) -> Decision {
+  let need = positive(cost, 1)
+  self.roll(now_ms)
+  if self.used + need <= self.limit {
+    self.used = self.used + need
+    Allowed({
+      remaining: self.limit - self.used,
+      reset_after_ms: self.window_start_ms + self.window_ms - now_ms,
+    })
+  } else {
+    Rejected({
+      retry_after_ms: self.window_start_ms + self.window_ms - now_ms,
+      reason: "fixed window limit exceeded",
+    })
+  }
+}

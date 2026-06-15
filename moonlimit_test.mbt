@@ -55,3 +55,21 @@ test "leaky bucket drains before next admission" {
   inspect(allowed.is_allowed(), content="true")
   inspect(allowed.remaining(), content="0")
 }
+
+test "fixed window rejects within a full window" {
+  let limiter = @moonlimit.FixedWindow::new(2, 1000)
+  inspect(limiter.allow_at(10).is_allowed(), content="true")
+  inspect(limiter.allow_at(20).is_allowed(), content="true")
+  let rejected = limiter.allow_at(30)
+  inspect(rejected.is_allowed(), content="false")
+  inspect(rejected.retry_after_ms(), content="970")
+}
+
+test "fixed window resets on next window" {
+  let limiter = @moonlimit.FixedWindow::new(1, 1000)
+  inspect(limiter.allow_at(999).is_allowed(), content="true")
+  inspect(limiter.allow_at(999).is_allowed(), content="false")
+  let allowed = limiter.allow_at(1000)
+  inspect(allowed.is_allowed(), content="true")
+  inspect(allowed.remaining(), content="0")
+}
