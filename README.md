@@ -10,8 +10,14 @@ API gateways, and tests without depending on a specific runtime.
 - Leaky bucket for smooth draining.
 - Fixed window counters for simple quotas.
 - Sliding window counters for reduced boundary spikes.
+- Sliding log for exact timestamp-based windows.
 - GCRA for precise arrival-time based throttling.
+- Warmup token bucket for gradual rollout.
+- Quota window for long-period product or billing limits.
+- Concurrency limiter for in-flight work protection.
 - Keyed limiter wrappers for per-user or per-resource limits.
+- Policy engine for all-of / any-of rule composition.
+- Workload simulation and cookbook recipes for demos and tuning.
 
 ## Example
 
@@ -50,6 +56,14 @@ moon check
 moon test
 moon run cmd/main
 ```
+
+## Current Contest Readiness
+
+- MoonBit source scale: over 4k effective nonblank, noncomment lines.
+- Test suite: 237 tests covering algorithms, keyed variants, policy engines,
+  configuration parsing, workloads, cookbook recipes, and regression matrices.
+- CI: GitHub Actions runs `moon check`, `moon test`, and the CLI demo.
+- License: Apache-2.0.
 
 This project is being built for the MoonBit open source contest. The goal is a
 small, well-tested, reusable infrastructure library rather than a full gateway or

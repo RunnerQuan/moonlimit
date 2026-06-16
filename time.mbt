@@ -1,19 +1,24 @@
+///|
 pub(all) struct Duration {
   value_ms : Int
 } derive(Eq, Debug)
 
+///|
 pub fn Duration::from_millis(value_ms : Int) -> Duration {
   Duration::{ value_ms: clamp_non_negative(value_ms) }
 }
 
+///|
 pub fn Duration::millis(self : Duration) -> Int {
   self.value_ms
 }
 
+///|
 pub fn Duration::seconds(self : Duration) -> Int {
   self.value_ms / 1000
 }
 
+///|
 pub fn Duration::parse(text : String) -> Duration {
   let value = parse_positive_prefix(text)
   if ends_with(text, "ms") {
@@ -29,23 +34,28 @@ pub fn Duration::parse(text : String) -> Duration {
   }
 }
 
+///|
 pub(all) struct Rate {
   count : Int
   period : Duration
 } derive(Eq, Debug)
 
+///|
 pub fn Rate::new(count : Int, period : Duration) -> Rate {
   Rate::{ count: positive(count, 1), period }
 }
 
+///|
 pub fn Rate::events(self : Rate) -> Int {
   self.count
 }
 
+///|
 pub fn Rate::period_ms(self : Rate) -> Int {
   self.period.millis()
 }
 
+///|
 pub fn Rate::parse(text : String) -> Rate {
   let count = parse_positive_prefix(text)
   if ends_with(text, "/ms") {
@@ -61,6 +71,7 @@ pub fn Rate::parse(text : String) -> Rate {
   }
 }
 
+///|
 fn ends_with(text : String, suffix : String) -> Bool {
   let text_len = text.length()
   let suffix_len = suffix.length()
@@ -71,10 +82,12 @@ fn ends_with(text : String, suffix : String) -> Bool {
   }
 }
 
+///|
 fn is_digit(ch : UInt16) -> Bool {
   ch.to_int() >= '0'.to_int() && ch.to_int() <= '9'.to_int()
 }
 
+///|
 fn parse_positive_prefix(text : String) -> Int {
   let mut value = 0
   let mut seen = false
@@ -87,9 +100,14 @@ fn parse_positive_prefix(text : String) -> Int {
       break
     }
   }
-  if seen { positive(value, 1) } else { 1 }
+  if seen {
+    positive(value, 1)
+  } else {
+    1
+  }
 }
 
+///|
 fn split_words(text : String) -> Array[String] {
   let words : Array[String] = []
   let mut start = -1

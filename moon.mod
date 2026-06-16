@@ -19,6 +19,6 @@ repository = "https://github.com/RunnerQuan/moonlimit"
 
 license = "Apache-2.0"
 
-keywords = ["rate-limit", "token-bucket", "gcra", "moonbit", "throttling"]
+keywords = [ "rate-limit", "token-bucket", "gcra", "moonbit", "throttling" ]
 
 description = "Composable rate limiting algorithms for MoonBit applications"

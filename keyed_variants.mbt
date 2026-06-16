@@ -1,3 +1,4 @@
+///|
 pub(all) struct KeyedFixedWindow {
   limit : Int
   window_ms : Int
@@ -5,6 +6,7 @@ pub(all) struct KeyedFixedWindow {
   mut last_seen : @hashmap.HashMap[String, Int]
 } derive(Debug)
 
+///|
 pub fn KeyedFixedWindow::new(limit : Int, window_ms : Int) -> KeyedFixedWindow {
   KeyedFixedWindow::{
     limit: positive(limit, 1),
@@ -14,6 +16,7 @@ pub fn KeyedFixedWindow::new(limit : Int, window_ms : Int) -> KeyedFixedWindow {
   }
 }
 
+///|
 fn KeyedFixedWindow::window_for(
   self : KeyedFixedWindow,
   key : String,
@@ -29,6 +32,7 @@ fn KeyedFixedWindow::window_for(
   }
 }
 
+///|
 pub fn KeyedFixedWindow::allow_at(
   self : KeyedFixedWindow,
   key : String,
@@ -40,10 +44,12 @@ pub fn KeyedFixedWindow::allow_at(
   window.allow_at(now_ms, cost~)
 }
 
+///|
 pub fn KeyedFixedWindow::len(self : KeyedFixedWindow) -> Int {
   self.windows.length()
 }
 
+///|
 pub fn KeyedFixedWindow::prune_idle(
   self : KeyedFixedWindow,
   now_ms : Int,
@@ -52,6 +58,7 @@ pub fn KeyedFixedWindow::prune_idle(
   prune_string_maps(self.last_seen, self.windows, now_ms, max_idle_ms)
 }
 
+///|
 pub(all) struct KeyedSlidingLog {
   limit : Int
   window_ms : Int
@@ -59,6 +66,7 @@ pub(all) struct KeyedSlidingLog {
   mut last_seen : @hashmap.HashMap[String, Int]
 } derive(Debug)
 
+///|
 pub fn KeyedSlidingLog::new(limit : Int, window_ms : Int) -> KeyedSlidingLog {
   KeyedSlidingLog::{
     limit: positive(limit, 1),
@@ -68,6 +76,7 @@ pub fn KeyedSlidingLog::new(limit : Int, window_ms : Int) -> KeyedSlidingLog {
   }
 }
 
+///|
 fn KeyedSlidingLog::log_for(
   self : KeyedSlidingLog,
   key : String,
@@ -83,6 +92,7 @@ fn KeyedSlidingLog::log_for(
   }
 }
 
+///|
 pub fn KeyedSlidingLog::allow_at(
   self : KeyedSlidingLog,
   key : String,
@@ -94,10 +104,12 @@ pub fn KeyedSlidingLog::allow_at(
   log.allow_at(now_ms, cost~)
 }
 
+///|
 pub fn KeyedSlidingLog::len(self : KeyedSlidingLog) -> Int {
   self.logs.length()
 }
 
+///|
 pub fn KeyedSlidingLog::prune_idle(
   self : KeyedSlidingLog,
   now_ms : Int,
@@ -106,6 +118,7 @@ pub fn KeyedSlidingLog::prune_idle(
   prune_string_maps(self.last_seen, self.logs, now_ms, max_idle_ms)
 }
 
+///|
 pub(all) struct KeyedGcra {
   limit : Int
   period_ms : Int
@@ -114,6 +127,7 @@ pub(all) struct KeyedGcra {
   mut last_seen : @hashmap.HashMap[String, Int]
 } derive(Debug)
 
+///|
 pub fn KeyedGcra::new(
   limit : Int,
   period_ms : Int,
@@ -128,6 +142,7 @@ pub fn KeyedGcra::new(
   }
 }
 
+///|
 fn KeyedGcra::state_for(self : KeyedGcra, key : String, now_ms : Int) -> Gcra {
   match self.states.get(key) {
     Some(state) => state
@@ -144,6 +159,7 @@ fn KeyedGcra::state_for(self : KeyedGcra, key : String, now_ms : Int) -> Gcra {
   }
 }
 
+///|
 pub fn KeyedGcra::allow_at(
   self : KeyedGcra,
   key : String,
@@ -155,10 +171,12 @@ pub fn KeyedGcra::allow_at(
   state.allow_at(now_ms, cost~)
 }
 
+///|
 pub fn KeyedGcra::len(self : KeyedGcra) -> Int {
   self.states.length()
 }
 
+///|
 pub fn KeyedGcra::prune_idle(
   self : KeyedGcra,
   now_ms : Int,
@@ -167,11 +185,13 @@ pub fn KeyedGcra::prune_idle(
   prune_string_maps(self.last_seen, self.states, now_ms, max_idle_ms)
 }
 
+///|
 pub(all) struct KeyedConcurrencyLimiter {
   capacity : Int
   mut states : @hashmap.HashMap[String, ConcurrencyLimiter]
 } derive(Debug)
 
+///|
 pub fn KeyedConcurrencyLimiter::new(capacity : Int) -> KeyedConcurrencyLimiter {
   KeyedConcurrencyLimiter::{
     capacity: positive(capacity, 1),
@@ -179,6 +199,7 @@ pub fn KeyedConcurrencyLimiter::new(capacity : Int) -> KeyedConcurrencyLimiter {
   }
 }
 
+///|
 fn KeyedConcurrencyLimiter::state_for(
   self : KeyedConcurrencyLimiter,
   key : String,
@@ -193,6 +214,7 @@ fn KeyedConcurrencyLimiter::state_for(
   }
 }
 
+///|
 pub fn KeyedConcurrencyLimiter::acquire(
   self : KeyedConcurrencyLimiter,
   key : String,
@@ -200,6 +222,7 @@ pub fn KeyedConcurrencyLimiter::acquire(
   self.state_for(key).acquire()
 }
 
+///|
 pub fn KeyedConcurrencyLimiter::release(
   self : KeyedConcurrencyLimiter,
   key : String,
@@ -210,6 +233,7 @@ pub fn KeyedConcurrencyLimiter::release(
   }
 }
 
+///|
 pub fn KeyedConcurrencyLimiter::in_use(
   self : KeyedConcurrencyLimiter,
   key : String,
@@ -220,10 +244,12 @@ pub fn KeyedConcurrencyLimiter::in_use(
   }
 }
 
+///|
 pub fn KeyedConcurrencyLimiter::len(self : KeyedConcurrencyLimiter) -> Int {
   self.states.length()
 }
 
+///|
 fn[V] prune_string_maps(
   last_seen : @hashmap.HashMap[String, Int],
   values : @hashmap.HashMap[String, V],

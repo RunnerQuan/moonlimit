@@ -1,3 +1,4 @@
+///|
 pub(all) enum LimitKind {
   TokenBucket
   FixedWindow
@@ -5,6 +6,7 @@ pub(all) enum LimitKind {
   GcraSpec
 } derive(Eq, Debug)
 
+///|
 pub(all) struct LimitSpec {
   kind : LimitKind
   spec_name : String
@@ -13,6 +15,7 @@ pub(all) struct LimitSpec {
   third : Int
 } derive(Eq, Debug)
 
+///|
 pub fn LimitSpec::token_bucket(
   name : String,
   capacity : Int,
@@ -28,6 +31,7 @@ pub fn LimitSpec::token_bucket(
   }
 }
 
+///|
 pub fn LimitSpec::fixed_window(
   name : String,
   limit : Int,
@@ -42,6 +46,7 @@ pub fn LimitSpec::fixed_window(
   }
 }
 
+///|
 pub fn LimitSpec::sliding_log(
   name : String,
   limit : Int,
@@ -56,10 +61,12 @@ pub fn LimitSpec::sliding_log(
   }
 }
 
+///|
 pub fn LimitSpec::name(self : LimitSpec) -> String {
   self.spec_name
 }
 
+///|
 pub fn LimitSpec::parse(text : String) -> LimitSpec {
   let words = split_words(text)
   if words.length() >= 5 && words[0] == "token_bucket" {
@@ -86,6 +93,7 @@ pub fn LimitSpec::parse(text : String) -> LimitSpec {
   }
 }
 
+///|
 pub fn LimitSpec::to_token_bucket(self : LimitSpec) -> TokenBucket {
   match self.kind {
     TokenBucket => TokenBucket::new(self.first, self.second, self.third)
@@ -93,6 +101,7 @@ pub fn LimitSpec::to_token_bucket(self : LimitSpec) -> TokenBucket {
   }
 }
 
+///|
 pub fn LimitSpec::to_fixed_window(self : LimitSpec) -> FixedWindow {
   match self.kind {
     FixedWindow => FixedWindow::new(self.first, self.second)
@@ -100,6 +109,7 @@ pub fn LimitSpec::to_fixed_window(self : LimitSpec) -> FixedWindow {
   }
 }
 
+///|
 pub fn LimitSpec::to_sliding_log(self : LimitSpec) -> SlidingLog {
   match self.kind {
     SlidingLog => SlidingLog::new(self.first, self.second)

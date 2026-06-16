@@ -1,3 +1,4 @@
+///|
 pub(all) struct WarmupTokenBucket {
   capacity : Int
   refill_tokens : Int
@@ -8,6 +9,7 @@ pub(all) struct WarmupTokenBucket {
   mut last_refill_ms : Int
 } derive(Debug)
 
+///|
 pub fn WarmupTokenBucket::new(
   capacity : Int,
   refill_tokens : Int,
@@ -26,7 +28,11 @@ pub fn WarmupTokenBucket::new(
   }
 }
 
-fn WarmupTokenBucket::current_capacity(self : WarmupTokenBucket, now_ms : Int) -> Int {
+///|
+fn WarmupTokenBucket::current_capacity(
+  self : WarmupTokenBucket,
+  now_ms : Int,
+) -> Int {
   let elapsed = clamp_non_negative(now_ms - self.start_ms)
   if elapsed >= self.warmup_ms {
     self.capacity
@@ -35,6 +41,7 @@ fn WarmupTokenBucket::current_capacity(self : WarmupTokenBucket, now_ms : Int) -
   }
 }
 
+///|
 fn WarmupTokenBucket::refill(self : WarmupTokenBucket, now_ms : Int) -> Unit {
   let elapsed = now_ms - self.last_refill_ms
   if elapsed <= 0 {
@@ -52,6 +59,7 @@ fn WarmupTokenBucket::refill(self : WarmupTokenBucket, now_ms : Int) -> Unit {
   }
 }
 
+///|
 pub fn WarmupTokenBucket::allow_at(
   self : WarmupTokenBucket,
   now_ms : Int,
@@ -61,19 +69,20 @@ pub fn WarmupTokenBucket::allow_at(
   self.refill(now_ms)
   if self.tokens >= need {
     self.tokens = self.tokens - need
-    Allowed({
-      remaining: self.tokens,
-      reset_after_ms: 0,
-    })
+    Allowed({ remaining: self.tokens, reset_after_ms: 0 })
   } else {
     let missing = need - self.tokens
     Rejected({
-      retry_after_ms: ceil_div(missing * self.refill_period_ms, self.refill_tokens),
+      retry_after_ms: ceil_div(
+        missing * self.refill_period_ms,
+        self.refill_tokens,
+      ),
       reason: "warmup token bucket exhausted",
     })
   }
 }
 
+///|
 pub fn WarmupTokenBucket::capacity_at(
   self : WarmupTokenBucket,
   now_ms : Int,
@@ -81,6 +90,7 @@ pub fn WarmupTokenBucket::capacity_at(
   self.current_capacity(now_ms)
 }
 
+///|
 pub(all) struct QuotaWindow {
   quota : Int
   period_ms : Int
@@ -88,6 +98,7 @@ pub(all) struct QuotaWindow {
   mut used : Int
 } derive(Debug)
 
+///|
 pub fn QuotaWindow::new(
   quota : Int,
   period_ms : Int,
@@ -101,6 +112,7 @@ pub fn QuotaWindow::new(
   }
 }
 
+///|
 fn QuotaWindow::roll(self : QuotaWindow, now_ms : Int) -> Unit {
   if now_ms >= self.window_start_ms + self.period_ms {
     let elapsed = now_ms - self.window_start_ms
@@ -110,6 +122,7 @@ fn QuotaWindow::roll(self : QuotaWindow, now_ms : Int) -> Unit {
   }
 }
 
+///|
 pub fn QuotaWindow::allow_at(
   self : QuotaWindow,
   now_ms : Int,
@@ -131,30 +144,37 @@ pub fn QuotaWindow::allow_at(
   }
 }
 
+///|
 pub fn QuotaWindow::used(self : QuotaWindow) -> Int {
   self.used
 }
 
+///|
 pub fn QuotaWindow::remaining_quota(self : QuotaWindow) -> Int {
   self.quota - self.used
 }
 
+///|
 pub(all) struct BatchDecision {
   mut decisions : Array[Decision]
 } derive(Debug)
 
+///|
 pub fn BatchDecision::new() -> BatchDecision {
   BatchDecision::{ decisions: [] }
 }
 
+///|
 pub fn BatchDecision::push(self : BatchDecision, decision : Decision) -> Unit {
   self.decisions.push(decision)
 }
 
+///|
 pub fn BatchDecision::len(self : BatchDecision) -> Int {
   self.decisions.length()
 }
 
+///|
 pub fn BatchDecision::allowed(self : BatchDecision) -> Int {
   let mut count = 0
   for decision in self.decisions {
@@ -165,14 +185,17 @@ pub fn BatchDecision::allowed(self : BatchDecision) -> Int {
   count
 }
 
+///|
 pub fn BatchDecision::rejected(self : BatchDecision) -> Int {
   self.len() - self.allowed()
 }
 
+///|
 pub fn BatchDecision::all_allowed(self : BatchDecision) -> Bool {
   self.rejected() == 0
 }
 
+///|
 pub fn BatchDecision::max_retry_after_ms(self : BatchDecision) -> Int {
   let mut value = 0
   for decision in self.decisions {
@@ -183,18 +206,23 @@ pub fn BatchDecision::max_retry_after_ms(self : BatchDecision) -> Int {
   value
 }
 
+///|
 pub(all) struct BatchTokenBucket {
   bucket : TokenBucket
 } derive(Debug)
 
+///|
 pub fn BatchTokenBucket::new(
   capacity : Int,
   refill_tokens : Int,
   refill_period_ms : Int,
 ) -> BatchTokenBucket {
-  BatchTokenBucket::{ bucket: TokenBucket::new(capacity, refill_tokens, refill_period_ms) }
+  BatchTokenBucket::{
+    bucket: TokenBucket::new(capacity, refill_tokens, refill_period_ms),
+  }
 }
 
+///|
 pub fn BatchTokenBucket::allow_many(
   self : BatchTokenBucket,
   times : Array[Int],
@@ -206,6 +234,7 @@ pub fn BatchTokenBucket::allow_many(
   batch
 }
 
+///|
 pub(all) struct DecisionStats {
   mut allowed_count : Int
   mut rejected_count : Int
@@ -213,6 +242,7 @@ pub(all) struct DecisionStats {
   mut retry_after_max_ms : Int
 } derive(Debug)
 
+///|
 pub fn DecisionStats::new() -> DecisionStats {
   DecisionStats::{
     allowed_count: 0,
@@ -222,6 +252,7 @@ pub fn DecisionStats::new() -> DecisionStats {
   }
 }
 
+///|
 pub fn DecisionStats::record(self : DecisionStats, decision : Decision) -> Unit {
   if decision.is_allowed() {
     self.allowed_count = self.allowed_count + 1
@@ -235,22 +266,27 @@ pub fn DecisionStats::record(self : DecisionStats, decision : Decision) -> Unit 
   }
 }
 
+///|
 pub fn DecisionStats::allowed(self : DecisionStats) -> Int {
   self.allowed_count
 }
 
+///|
 pub fn DecisionStats::rejected(self : DecisionStats) -> Int {
   self.rejected_count
 }
 
+///|
 pub fn DecisionStats::total(self : DecisionStats) -> Int {
   self.allowed_count + self.rejected_count
 }
 
+///|
 pub fn DecisionStats::max_retry_after_ms(self : DecisionStats) -> Int {
   self.retry_after_max_ms
 }
 
+///|
 pub fn DecisionStats::average_retry_after_ms(self : DecisionStats) -> Int {
   if self.rejected_count == 0 {
     0
@@ -259,6 +295,7 @@ pub fn DecisionStats::average_retry_after_ms(self : DecisionStats) -> Int {
   }
 }
 
+///|
 pub fn DecisionStats::summary(self : DecisionStats) -> String {
   "allowed=\{self.allowed()} rejected=\{self.rejected()} avg_retry_ms=\{self.average_retry_after_ms()} max_retry_ms=\{self.max_retry_after_ms()}"
 }

@@ -1,16 +1,14 @@
+///|
 pub fn Workload::push(
   self : Workload,
   at_ms : Int,
   cost? : Int = 1,
   key? : String = "",
 ) -> Unit {
-  self.events.push({
-    at_ms,
-    cost: positive(cost, 1),
-    key,
-  })
+  self.events.push({ at_ms, cost: positive(cost, 1), key })
 }
 
+///|
 pub fn Workload::ramp(
   count : Int,
   start_ms : Int,
@@ -28,6 +26,7 @@ pub fn Workload::ramp(
   workload
 }
 
+///|
 pub fn Workload::alternating_keys(
   count : Int,
   start_ms : Int,
@@ -38,11 +37,12 @@ pub fn Workload::alternating_keys(
   let workload = Workload::new()
   for i in 0..<positive(count, 1) {
     let key = if i % 2 == 0 { left } else { right }
-    workload.push(start_ms + i * positive(step_ms, 1), key=key)
+    workload.push(start_ms + i * positive(step_ms, 1), key~)
   }
   workload
 }
 
+///|
 pub fn Workload::shift(self : Workload, delta_ms : Int) -> Workload {
   let shifted = Workload::new()
   for event in self.events {
@@ -51,7 +51,12 @@ pub fn Workload::shift(self : Workload, delta_ms : Int) -> Workload {
   shifted
 }
 
-pub fn Workload::repeat(self : Workload, times : Int, spacing_ms : Int) -> Workload {
+///|
+pub fn Workload::repeat(
+  self : Workload,
+  times : Int,
+  spacing_ms : Int,
+) -> Workload {
   let repeated = Workload::new()
   let safe_times = positive(times, 1)
   let safe_spacing = positive(spacing_ms, 1)
@@ -67,6 +72,7 @@ pub fn Workload::repeat(self : Workload, times : Int, spacing_ms : Int) -> Workl
   repeated
 }
 
+///|
 pub fn Workload::merge(left : Workload, right : Workload) -> Workload {
   let merged = Workload::new()
   for event in left.events {
@@ -78,6 +84,7 @@ pub fn Workload::merge(left : Workload, right : Workload) -> Workload {
   merged
 }
 
+///|
 pub fn Workload::first_at(self : Workload) -> Int {
   if self.events.length() == 0 {
     0
@@ -92,6 +99,7 @@ pub fn Workload::first_at(self : Workload) -> Int {
   }
 }
 
+///|
 pub fn Workload::last_at(self : Workload) -> Int {
   if self.events.length() == 0 {
     0
@@ -106,10 +114,12 @@ pub fn Workload::last_at(self : Workload) -> Int {
   }
 }
 
+///|
 pub fn Workload::describe(self : Workload) -> String {
   "events=\{self.len()} first=\{self.first_at()} last=\{self.last_at()}"
 }
 
+///|
 pub fn SimulationReport::allowed_per_thousand(self : SimulationReport) -> Int {
   if self.total() == 0 {
     0
@@ -118,6 +128,7 @@ pub fn SimulationReport::allowed_per_thousand(self : SimulationReport) -> Int {
   }
 }
 
+///|
 pub fn SimulationReport::rejected_per_thousand(self : SimulationReport) -> Int {
   if self.total() == 0 {
     0
@@ -126,6 +137,7 @@ pub fn SimulationReport::rejected_per_thousand(self : SimulationReport) -> Int {
   }
 }
 
+///|
 pub fn SimulationReport::max_retry_after_ms(self : SimulationReport) -> Int {
   let mut value = 0
   for entry in self.trace {
@@ -137,6 +149,7 @@ pub fn SimulationReport::max_retry_after_ms(self : SimulationReport) -> Int {
   value
 }
 
+///|
 pub fn SimulationReport::summary_line(self : SimulationReport) -> String {
   "total=\{self.total()} allowed=\{self.allowed()} rejected=\{self.rejected()} max_retry_ms=\{self.max_retry_after_ms()}"
 }

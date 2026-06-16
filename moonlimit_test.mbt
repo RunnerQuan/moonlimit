@@ -1,3 +1,4 @@
+///|
 test "decision model reports allowed state" {
   let decision = @moonlimit.Decision::Allowed({
     remaining: 3,
@@ -8,6 +9,7 @@ test "decision model reports allowed state" {
   inspect(decision.retry_after_ms(), content="0")
 }
 
+///|
 test "decision model reports rejected state" {
   let decision = @moonlimit.Decision::Rejected({
     retry_after_ms: 250,
@@ -18,6 +20,7 @@ test "decision model reports rejected state" {
   inspect(decision.retry_after_ms(), content="250")
 }
 
+///|
 test "token bucket allows initial burst then rejects" {
   let bucket = @moonlimit.TokenBucket::new(2, 1, 1000)
   inspect(bucket.allow_at(0).is_allowed(), content="true")
@@ -27,6 +30,7 @@ test "token bucket allows initial burst then rejects" {
   inspect(rejected.retry_after_ms(), content="1000")
 }
 
+///|
 test "token bucket refills over time" {
   let bucket = @moonlimit.TokenBucket::new(2, 1, 1000)
   ignore(bucket.allow_at(0))
@@ -37,6 +41,7 @@ test "token bucket refills over time" {
   inspect(allowed.remaining(), content="0")
 }
 
+///|
 test "leaky bucket admits until full" {
   let bucket = @moonlimit.LeakyBucket::new(2, 1, 1000)
   inspect(bucket.allow_at(0).is_allowed(), content="true")
@@ -46,6 +51,7 @@ test "leaky bucket admits until full" {
   inspect(rejected.retry_after_ms(), content="1000")
 }
 
+///|
 test "leaky bucket drains before next admission" {
   let bucket = @moonlimit.LeakyBucket::new(2, 1, 1000)
   ignore(bucket.allow_at(0))
@@ -56,6 +62,7 @@ test "leaky bucket drains before next admission" {
   inspect(allowed.remaining(), content="0")
 }
 
+///|
 test "fixed window rejects within a full window" {
   let limiter = @moonlimit.FixedWindow::new(2, 1000)
   inspect(limiter.allow_at(10).is_allowed(), content="true")
@@ -65,6 +72,7 @@ test "fixed window rejects within a full window" {
   inspect(rejected.retry_after_ms(), content="970")
 }
 
+///|
 test "fixed window resets on next window" {
   let limiter = @moonlimit.FixedWindow::new(1, 1000)
   inspect(limiter.allow_at(999).is_allowed(), content="true")
@@ -74,6 +82,7 @@ test "fixed window resets on next window" {
   inspect(allowed.remaining(), content="0")
 }
 
+///|
 test "sliding window rejects weighted previous traffic" {
   let limiter = @moonlimit.SlidingWindow::new(2, 1000)
   inspect(limiter.allow_at(0).is_allowed(), content="true")
@@ -83,6 +92,7 @@ test "sliding window rejects weighted previous traffic" {
   inspect(rejected.retry_after_ms(), content="1000")
 }
 
+///|
 test "sliding window allows after previous window weight decays" {
   let limiter = @moonlimit.SlidingWindow::new(2, 1000)
   ignore(limiter.allow_at(0))
@@ -93,6 +103,7 @@ test "sliding window allows after previous window weight decays" {
   inspect(allowed.remaining(), content="0")
 }
 
+///|
 test "gcra allows configured burst then rejects" {
   let limiter = @moonlimit.Gcra::new(1, 1000, burst_capacity=2)
   inspect(limiter.allow_at(0).is_allowed(), content="true")
@@ -102,6 +113,7 @@ test "gcra allows configured burst then rejects" {
   inspect(rejected.retry_after_ms(), content="1000")
 }
 
+///|
 test "gcra admits once theoretical arrival catches up" {
   let limiter = @moonlimit.Gcra::new(1, 1000, burst_capacity=1)
   inspect(limiter.allow_at(0).is_allowed(), content="true")
@@ -111,6 +123,7 @@ test "gcra admits once theoretical arrival catches up" {
   inspect(allowed.reset_after_ms(), content="1000")
 }
 
+///|
 test "keyed token bucket isolates keys" {
   let limiter = @moonlimit.KeyedTokenBucket::new(1, 1, 1000)
   inspect(limiter.allow_at("alice", 0).is_allowed(), content="true")
@@ -119,6 +132,7 @@ test "keyed token bucket isolates keys" {
   inspect(limiter.len(), content="2")
 }
 
+///|
 test "keyed token bucket prunes idle keys" {
   let limiter = @moonlimit.KeyedTokenBucket::new(1, 1, 1000)
   ignore(limiter.allow_at("alice", 0))

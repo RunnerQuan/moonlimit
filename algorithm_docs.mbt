@@ -1,3 +1,4 @@
+///|
 pub(all) struct AlgorithmDoc {
   doc_name : String
   summary : String
@@ -5,18 +6,22 @@ pub(all) struct AlgorithmDoc {
   tradeoffs : String
 } derive(Eq, Debug)
 
+///|
 pub fn AlgorithmDoc::name(self : AlgorithmDoc) -> String {
   self.doc_name
 }
 
+///|
 pub fn AlgorithmDoc::line(self : AlgorithmDoc) -> String {
   "\{self.doc_name}: \{self.summary}"
 }
 
+///|
 pub fn AlgorithmDoc::markdown(self : AlgorithmDoc) -> String {
   "## \{self.doc_name}\n\n\{self.summary}\n\nStrengths: \{self.strengths}\n\nTradeoffs: \{self.tradeoffs}\n"
 }
 
+///|
 pub fn doc_token_bucket() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Token Bucket",
@@ -26,6 +31,7 @@ pub fn doc_token_bucket() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_leaky_bucket() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Leaky Bucket",
@@ -35,6 +41,7 @@ pub fn doc_leaky_bucket() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_fixed_window() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Fixed Window",
@@ -44,6 +51,7 @@ pub fn doc_fixed_window() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_sliding_window() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Sliding Window",
@@ -53,6 +61,7 @@ pub fn doc_sliding_window() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_sliding_log() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Sliding Log",
@@ -62,6 +71,7 @@ pub fn doc_sliding_log() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_gcra() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "GCRA",
@@ -71,6 +81,7 @@ pub fn doc_gcra() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_concurrency() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Concurrency Limiter",
@@ -80,6 +91,7 @@ pub fn doc_concurrency() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn doc_quota() -> AlgorithmDoc {
   AlgorithmDoc::{
     doc_name: "Quota Window",
@@ -89,6 +101,7 @@ pub fn doc_quota() -> AlgorithmDoc {
   }
 }
 
+///|
 pub fn algorithm_docs() -> Array[AlgorithmDoc] {
   [
     doc_token_bucket(),
@@ -102,6 +115,7 @@ pub fn algorithm_docs() -> Array[AlgorithmDoc] {
   ]
 }
 
+///|
 pub fn algorithm_markdown() -> String {
   let mut out = "# MoonLimit Algorithms\n"
   for doc in algorithm_docs() {
@@ -110,6 +124,7 @@ pub fn algorithm_markdown() -> String {
   out
 }
 
+///|
 pub fn algorithm_summary_table() -> String {
   let mut out = "algorithm,summary\n"
   for doc in algorithm_docs() {

@@ -1,3 +1,4 @@
+///|
 test "keyed fixed window isolates keys and prunes" {
   let limiter = @moonlimit.KeyedFixedWindow::new(1, 1000)
   inspect(limiter.allow_at("alice", 0).is_allowed(), content="true")
@@ -8,6 +9,7 @@ test "keyed fixed window isolates keys and prunes" {
   inspect(limiter.len(), content="0")
 }
 
+///|
 test "keyed sliding log isolates exact windows" {
   let limiter = @moonlimit.KeyedSlidingLog::new(2, 1000)
   inspect(limiter.allow_at("alice", 0).is_allowed(), content="true")
@@ -17,6 +19,7 @@ test "keyed sliding log isolates exact windows" {
   inspect(limiter.allow_at("alice", 1000).is_allowed(), content="true")
 }
 
+///|
 test "keyed gcra keeps independent theoretical arrival times" {
   let limiter = @moonlimit.KeyedGcra::new(1, 1000, burst_capacity=1)
   inspect(limiter.allow_at("alice", 0).is_allowed(), content="true")
@@ -25,6 +28,7 @@ test "keyed gcra keeps independent theoretical arrival times" {
   inspect(limiter.allow_at("alice", 1000).is_allowed(), content="true")
 }
 
+///|
 test "keyed concurrency tracks in flight by key" {
   let limiter = @moonlimit.KeyedConcurrencyLimiter::new(1)
   inspect(limiter.acquire("alice").is_allowed(), content="true")
@@ -35,6 +39,7 @@ test "keyed concurrency tracks in flight by key" {
   inspect(limiter.acquire("alice").is_allowed(), content="true")
 }
 
+///|
 test "limit spec validation reports warnings" {
   let spec = @moonlimit.LimitSpec::token_bucket("tiny", 1, 3, 1000)
   let report = spec.validate()
@@ -43,6 +48,7 @@ test "limit spec validation reports warnings" {
   inspect(report.summary(), content="errors=0 warnings=1 issues=1")
 }
 
+///|
 test "rule set parses multiple lines and ignores comments" {
   let rules = @moonlimit.RuleSet::parse_lines(
     "# sample\n" +
@@ -54,6 +60,7 @@ test "rule set parses multiple lines and ignores comments" {
   inspect(rules.validate().is_ok(), content="true")
 }
 
+///|
 test "workload ramp gets denser over time" {
   let workload = @moonlimit.Workload::ramp(4, 0, 100, 25)
   inspect(workload.len(), content="4")
@@ -61,11 +68,13 @@ test "workload ramp gets denser over time" {
   inspect(workload.last_at(), content="225")
 }
 
+///|
 test "workload alternating keys records range" {
   let workload = @moonlimit.Workload::alternating_keys(4, 10, 5, "a", "b")
   inspect(workload.describe(), content="events=4 first=10 last=25")
 }
 
+///|
 test "workload repeat and shift compose traces" {
   let base = @moonlimit.Workload::steady(2, 0, 100)
   let repeated = base.repeat(3, 1000).shift(50)
@@ -74,6 +83,7 @@ test "workload repeat and shift compose traces" {
   inspect(repeated.last_at(), content="2150")
 }
 
+///|
 test "simulation report exposes ratios and summary" {
   let limiter = @moonlimit.FixedWindow::new(1, 1000)
   let report = @moonlimit.Simulator::run_fixed_window(
@@ -82,5 +92,8 @@ test "simulation report exposes ratios and summary" {
   )
   inspect(report.allowed_per_thousand(), content="250")
   inspect(report.rejected_per_thousand(), content="750")
-  inspect(report.summary_line(), content="total=4 allowed=1 rejected=3 max_retry_ms=1000")
+  inspect(
+    report.summary_line(),
+    content="total=4 allowed=1 rejected=3 max_retry_ms=1000",
+  )
 }

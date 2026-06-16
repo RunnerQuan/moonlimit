@@ -1,21 +1,25 @@
+///|
 /// Successful admission details returned by a limiter.
 pub(all) struct AllowInfo {
   remaining : Int
   reset_after_ms : Int
 } derive(Eq, Debug)
 
+///|
 /// Rejection details returned by a limiter.
 pub(all) struct RejectInfo {
   retry_after_ms : Int
   reason : String
 } derive(Eq, Debug)
 
+///|
 /// Rate limiter decision with enough context for logs, tests, and clients.
 pub(all) enum Decision {
   Allowed(AllowInfo)
   Rejected(RejectInfo)
 } derive(Eq, Debug)
 
+///|
 pub fn Decision::is_allowed(self : Decision) -> Bool {
   match self {
     Allowed(_) => true
@@ -23,6 +27,7 @@ pub fn Decision::is_allowed(self : Decision) -> Bool {
   }
 }
 
+///|
 pub fn Decision::retry_after_ms(self : Decision) -> Int {
   match self {
     Allowed(_) => 0
@@ -30,6 +35,7 @@ pub fn Decision::retry_after_ms(self : Decision) -> Int {
   }
 }
 
+///|
 pub fn Decision::remaining(self : Decision) -> Int {
   match self {
     Allowed(info) => info.remaining
@@ -37,6 +43,7 @@ pub fn Decision::remaining(self : Decision) -> Int {
   }
 }
 
+///|
 pub fn Decision::reset_after_ms(self : Decision) -> Int {
   match self {
     Allowed(info) => info.reset_after_ms
@@ -44,19 +51,35 @@ pub fn Decision::reset_after_ms(self : Decision) -> Int {
   }
 }
 
+///|
 fn positive(value : Int, fallback : Int) -> Int {
-  if value > 0 { value } else { fallback }
+  if value > 0 {
+    value
+  } else {
+    fallback
+  }
 }
 
+///|
 pub fn ceil_div(numerator : Int, denominator : Int) -> Int {
   let d = positive(denominator, 1)
-  if numerator <= 0 { 0 } else { (numerator + d - 1) / d }
+  if numerator <= 0 {
+    0
+  } else {
+    (numerator + d - 1) / d
+  }
 }
 
+///|
 pub fn clamp_non_negative(value : Int) -> Int {
-  if value < 0 { 0 } else { value }
+  if value < 0 {
+    0
+  } else {
+    value
+  }
 }
 
+///|
 pub(all) struct TokenBucket {
   capacity : Int
   refill_tokens : Int
@@ -65,6 +88,7 @@ pub(all) struct TokenBucket {
   mut last_refill_ms : Int
 } derive(Debug)
 
+///|
 pub fn TokenBucket::new(
   capacity : Int,
   refill_tokens : Int,
@@ -81,6 +105,7 @@ pub fn TokenBucket::new(
   }
 }
 
+///|
 fn TokenBucket::refill(self : TokenBucket, now_ms : Int) -> Unit {
   let elapsed = now_ms - self.last_refill_ms
   if elapsed <= 0 {
@@ -97,6 +122,7 @@ fn TokenBucket::refill(self : TokenBucket, now_ms : Int) -> Unit {
   }
 }
 
+///|
 pub fn TokenBucket::allow_at(
   self : TokenBucket,
   now_ms : Int,
@@ -106,20 +132,15 @@ pub fn TokenBucket::allow_at(
   self.refill(now_ms)
   if self.tokens >= need {
     self.tokens = self.tokens - need
-    Allowed({
-      remaining: self.tokens,
-      reset_after_ms: 0,
-    })
+    Allowed({ remaining: self.tokens, reset_after_ms: 0 })
   } else {
     let missing = need - self.tokens
     let retry = ceil_div(missing * self.refill_period_ms, self.refill_tokens)
-    Rejected({
-      retry_after_ms: retry,
-      reason: "token bucket exhausted",
-    })
+    Rejected({ retry_after_ms: retry, reason: "token bucket exhausted" })
   }
 }
 
+///|
 pub(all) struct LeakyBucket {
   capacity : Int
   leak_tokens : Int
@@ -128,6 +149,7 @@ pub(all) struct LeakyBucket {
   mut last_leak_ms : Int
 } derive(Debug)
 
+///|
 pub fn LeakyBucket::new(
   capacity : Int,
   leak_tokens : Int,
@@ -143,6 +165,7 @@ pub fn LeakyBucket::new(
   }
 }
 
+///|
 fn LeakyBucket::drain(self : LeakyBucket, now_ms : Int) -> Unit {
   let elapsed = now_ms - self.last_leak_ms
   if elapsed <= 0 {
@@ -155,6 +178,7 @@ fn LeakyBucket::drain(self : LeakyBucket, now_ms : Int) -> Unit {
   }
 }
 
+///|
 pub fn LeakyBucket::allow_at(
   self : LeakyBucket,
   now_ms : Int,
@@ -164,10 +188,7 @@ pub fn LeakyBucket::allow_at(
   self.drain(now_ms)
   if self.level + need <= self.capacity {
     self.level = self.level + need
-    Allowed({
-      remaining: self.capacity - self.level,
-      reset_after_ms: 0,
-    })
+    Allowed({ remaining: self.capacity - self.level, reset_after_ms: 0 })
   } else {
     let overflow = self.level + need - self.capacity
     Rejected({
@@ -177,6 +198,7 @@ pub fn LeakyBucket::allow_at(
   }
 }
 
+///|
 pub(all) struct FixedWindow {
   limit : Int
   window_ms : Int
@@ -184,6 +206,7 @@ pub(all) struct FixedWindow {
   mut used : Int
 } derive(Debug)
 
+///|
 pub fn FixedWindow::new(
   limit : Int,
   window_ms : Int,
@@ -197,6 +220,7 @@ pub fn FixedWindow::new(
   }
 }
 
+///|
 fn FixedWindow::roll(self : FixedWindow, now_ms : Int) -> Unit {
   if now_ms >= self.window_start_ms + self.window_ms {
     let elapsed = now_ms - self.window_start_ms
@@ -206,6 +230,7 @@ fn FixedWindow::roll(self : FixedWindow, now_ms : Int) -> Unit {
   }
 }
 
+///|
 pub fn FixedWindow::allow_at(
   self : FixedWindow,
   now_ms : Int,
@@ -227,6 +252,7 @@ pub fn FixedWindow::allow_at(
   }
 }
 
+///|
 pub(all) struct SlidingWindow {
   limit : Int
   window_ms : Int
@@ -235,6 +261,7 @@ pub(all) struct SlidingWindow {
   mut previous_count : Int
 } derive(Debug)
 
+///|
 pub fn SlidingWindow::new(
   limit : Int,
   window_ms : Int,
@@ -249,6 +276,7 @@ pub fn SlidingWindow::new(
   }
 }
 
+///|
 fn SlidingWindow::roll(self : SlidingWindow, now_ms : Int) -> Unit {
   if now_ms < self.window_start_ms + self.window_ms {
     return
@@ -264,12 +292,14 @@ fn SlidingWindow::roll(self : SlidingWindow, now_ms : Int) -> Unit {
   self.window_start_ms = self.window_start_ms + windows * self.window_ms
 }
 
+///|
 fn SlidingWindow::estimated(self : SlidingWindow, now_ms : Int) -> Int {
   let elapsed = clamp_non_negative(now_ms - self.window_start_ms)
   let remaining = clamp_non_negative(self.window_ms - elapsed)
   self.current_count + ceil_div(self.previous_count * remaining, self.window_ms)
 }
 
+///|
 pub fn SlidingWindow::allow_at(
   self : SlidingWindow,
   now_ms : Int,
@@ -292,12 +322,14 @@ pub fn SlidingWindow::allow_at(
   }
 }
 
+///|
 pub(all) struct Gcra {
   interval_ms : Int
   burst_capacity : Int
   mut theoretical_arrival_ms : Int
 } derive(Debug)
 
+///|
 pub fn Gcra::new(
   limit : Int,
   period_ms : Int,
@@ -312,11 +344,8 @@ pub fn Gcra::new(
   }
 }
 
-pub fn Gcra::allow_at(
-  self : Gcra,
-  now_ms : Int,
-  cost? : Int = 1,
-) -> Decision {
+///|
+pub fn Gcra::allow_at(self : Gcra, now_ms : Int, cost? : Int = 1) -> Decision {
   let need = positive(cost, 1)
   let tolerance = (self.burst_capacity - 1) * self.interval_ms
   let earliest = self.theoretical_arrival_ms - tolerance
@@ -340,6 +369,7 @@ pub fn Gcra::allow_at(
   }
 }
 
+///|
 pub(all) struct KeyedTokenBucket {
   capacity : Int
   refill_tokens : Int
@@ -348,6 +378,7 @@ pub(all) struct KeyedTokenBucket {
   mut last_seen : @hashmap.HashMap[String, Int]
 } derive(Debug)
 
+///|
 pub fn KeyedTokenBucket::new(
   capacity : Int,
   refill_tokens : Int,
@@ -362,6 +393,7 @@ pub fn KeyedTokenBucket::new(
   }
 }
 
+///|
 fn KeyedTokenBucket::bucket_for(
   self : KeyedTokenBucket,
   key : String,
@@ -382,6 +414,7 @@ fn KeyedTokenBucket::bucket_for(
   }
 }
 
+///|
 pub fn KeyedTokenBucket::allow_at(
   self : KeyedTokenBucket,
   key : String,
@@ -393,10 +426,12 @@ pub fn KeyedTokenBucket::allow_at(
   bucket.allow_at(now_ms, cost~)
 }
 
+///|
 pub fn KeyedTokenBucket::len(self : KeyedTokenBucket) -> Int {
   self.buckets.length()
 }
 
+///|
 pub fn KeyedTokenBucket::prune_idle(
   self : KeyedTokenBucket,
   now_ms : Int,

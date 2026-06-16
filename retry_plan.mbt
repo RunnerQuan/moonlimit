@@ -1,9 +1,11 @@
+///|
 pub(all) struct RetryAdvice {
   should_retry : Bool
   wait_ms : Int
   message : String
 } derive(Eq, Debug)
 
+///|
 pub fn RetryAdvice::from_decision(decision : Decision) -> RetryAdvice {
   if decision.is_allowed() {
     RetryAdvice::{
@@ -20,24 +22,29 @@ pub fn RetryAdvice::from_decision(decision : Decision) -> RetryAdvice {
   }
 }
 
+///|
 pub fn RetryAdvice::should_retry(self : RetryAdvice) -> Bool {
   self.should_retry
 }
 
+///|
 pub fn RetryAdvice::wait_ms(self : RetryAdvice) -> Int {
   self.wait_ms
 }
 
+///|
 pub fn RetryAdvice::message(self : RetryAdvice) -> String {
   self.message
 }
 
+///|
 pub(all) struct RetrySchedule {
   base_ms : Int
   max_ms : Int
   factor : Int
 } derive(Eq, Debug)
 
+///|
 pub fn RetrySchedule::exponential(
   base_ms : Int,
   max_ms : Int,
@@ -50,6 +57,7 @@ pub fn RetrySchedule::exponential(
   }
 }
 
+///|
 pub fn RetrySchedule::delay_at(self : RetrySchedule, attempt : Int) -> Int {
   let mut delay = self.base_ms
   for _ in 0..<clamp_non_negative(attempt) {
@@ -58,10 +66,18 @@ pub fn RetrySchedule::delay_at(self : RetrySchedule, attempt : Int) -> Int {
       return self.max_ms
     }
   }
-  if delay > self.max_ms { self.max_ms } else { delay }
+  if delay > self.max_ms {
+    self.max_ms
+  } else {
+    delay
+  }
 }
 
-pub fn RetrySchedule::delays(self : RetrySchedule, attempts : Int) -> Array[Int] {
+///|
+pub fn RetrySchedule::delays(
+  self : RetrySchedule,
+  attempts : Int,
+) -> Array[Int] {
   let values : Array[Int] = []
   for i in 0..<positive(attempts, 1) {
     values.push(self.delay_at(i))
@@ -69,6 +85,7 @@ pub fn RetrySchedule::delays(self : RetrySchedule, attempts : Int) -> Array[Int]
   values
 }
 
+///|
 pub fn RetrySchedule::describe(self : RetrySchedule, attempts : Int) -> String {
   let values = self.delays(attempts)
   let mut out = "retry"
@@ -78,6 +95,7 @@ pub fn RetrySchedule::describe(self : RetrySchedule, attempts : Int) -> String {
   out
 }
 
+///|
 pub fn Decision::explain(self : Decision) -> String {
   match self {
     Allowed(info) =>
@@ -87,6 +105,7 @@ pub fn Decision::explain(self : Decision) -> String {
   }
 }
 
+///|
 pub fn LimitSpec::explain(self : LimitSpec) -> String {
   match self.kind {
     TokenBucket =>

@@ -1,8 +1,10 @@
+///|
 pub(all) enum AdmissionMode {
   AllOf
   AnyOf
 } derive(Eq, Debug)
 
+///|
 pub(all) struct EngineRule {
   rule_name : String
   kind : LimitKind
@@ -12,6 +14,7 @@ pub(all) struct EngineRule {
   quota_window : QuotaWindow
 } derive(Debug)
 
+///|
 pub fn EngineRule::token_bucket(
   name : String,
   capacity : Int,
@@ -28,6 +31,7 @@ pub fn EngineRule::token_bucket(
   }
 }
 
+///|
 pub fn EngineRule::fixed_window(
   name : String,
   limit : Int,
@@ -43,6 +47,7 @@ pub fn EngineRule::fixed_window(
   }
 }
 
+///|
 pub fn EngineRule::sliding_log(
   name : String,
   limit : Int,
@@ -58,6 +63,7 @@ pub fn EngineRule::sliding_log(
   }
 }
 
+///|
 pub fn EngineRule::quota(
   name : String,
   quota : Int,
@@ -73,10 +79,12 @@ pub fn EngineRule::quota(
   }
 }
 
+///|
 pub fn EngineRule::name(self : EngineRule) -> String {
   self.rule_name
 }
 
+///|
 pub fn EngineRule::allow_at(
   self : EngineRule,
   now_ms : Int,
@@ -90,10 +98,12 @@ pub fn EngineRule::allow_at(
   }
 }
 
+///|
 pub fn EngineRule::describe(self : EngineRule) -> String {
   "\{self.rule_name}:\{self.kind_name()}"
 }
 
+///|
 pub fn EngineRule::kind_name(self : EngineRule) -> String {
   match self.kind {
     TokenBucket => "token_bucket"
@@ -103,23 +113,28 @@ pub fn EngineRule::kind_name(self : EngineRule) -> String {
   }
 }
 
+///|
 pub(all) struct PolicyEngine {
   mode : AdmissionMode
   mut rules : Array[EngineRule]
 } derive(Debug)
 
+///|
 pub fn PolicyEngine::all() -> PolicyEngine {
   PolicyEngine::{ mode: AllOf, rules: [] }
 }
 
+///|
 pub fn PolicyEngine::any() -> PolicyEngine {
   PolicyEngine::{ mode: AnyOf, rules: [] }
 }
 
+///|
 pub fn PolicyEngine::add_rule(self : PolicyEngine, rule : EngineRule) -> Unit {
   self.rules.push(rule)
 }
 
+///|
 pub fn PolicyEngine::add_token_bucket(
   self : PolicyEngine,
   name : String,
@@ -127,9 +142,12 @@ pub fn PolicyEngine::add_token_bucket(
   refill_tokens : Int,
   refill_period_ms : Int,
 ) -> Unit {
-  self.add_rule(EngineRule::token_bucket(name, capacity, refill_tokens, refill_period_ms))
+  self.add_rule(
+    EngineRule::token_bucket(name, capacity, refill_tokens, refill_period_ms),
+  )
 }
 
+///|
 pub fn PolicyEngine::add_fixed_window(
   self : PolicyEngine,
   name : String,
@@ -139,6 +157,7 @@ pub fn PolicyEngine::add_fixed_window(
   self.add_rule(EngineRule::fixed_window(name, limit, window_ms))
 }
 
+///|
 pub fn PolicyEngine::add_sliding_log(
   self : PolicyEngine,
   name : String,
@@ -148,6 +167,7 @@ pub fn PolicyEngine::add_sliding_log(
   self.add_rule(EngineRule::sliding_log(name, limit, window_ms))
 }
 
+///|
 pub fn PolicyEngine::add_quota(
   self : PolicyEngine,
   name : String,
@@ -157,10 +177,12 @@ pub fn PolicyEngine::add_quota(
   self.add_rule(EngineRule::quota(name, quota, period_ms))
 }
 
+///|
 pub fn PolicyEngine::len(self : PolicyEngine) -> Int {
   self.rules.length()
 }
 
+///|
 pub fn PolicyEngine::allow_at(
   self : PolicyEngine,
   now_ms : Int,
@@ -190,11 +212,15 @@ pub fn PolicyEngine::allow_at(
           best_retry = decision.retry_after_ms()
         }
       }
-      Rejected({ retry_after_ms: best_retry, reason: "all policy alternatives rejected" })
+      Rejected({
+        retry_after_ms: best_retry,
+        reason: "all policy alternatives rejected",
+      })
     }
   }
 }
 
+///|
 pub fn PolicyEngine::describe(self : PolicyEngine) -> String {
   let mode = match self.mode {
     AllOf => "all"
@@ -207,7 +233,11 @@ pub fn PolicyEngine::describe(self : PolicyEngine) -> String {
   out
 }
 
-pub fn PolicyEngine::simulate(self : PolicyEngine, workload : Workload) -> SimulationReport {
+///|
+pub fn PolicyEngine::simulate(
+  self : PolicyEngine,
+  workload : Workload,
+) -> SimulationReport {
   let report = SimulationReport::new()
   for event in workload.events {
     report.record(event.at_ms, self.allow_at(event.at_ms, cost=event.cost))

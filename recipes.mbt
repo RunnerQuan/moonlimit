@@ -1,3 +1,4 @@
+///|
 pub(all) struct LimiterRecipe {
   recipe_name : String
   audience : String
@@ -5,18 +6,22 @@ pub(all) struct LimiterRecipe {
   workload : Workload
 } derive(Debug)
 
+///|
 pub fn LimiterRecipe::name(self : LimiterRecipe) -> String {
   self.recipe_name
 }
 
+///|
 pub fn LimiterRecipe::describe(self : LimiterRecipe) -> String {
   "\{self.recipe_name} for \{self.audience}: \{self.engine.describe()}"
 }
 
+///|
 pub fn LimiterRecipe::run(self : LimiterRecipe) -> SimulationReport {
   self.engine.simulate(self.workload)
 }
 
+///|
 pub fn recipe_api_gateway() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_token_bucket("global-burst", 100, 20, 1000)
@@ -29,6 +34,7 @@ pub fn recipe_api_gateway() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_login_guard() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_fixed_window("login-window", 5, 60000)
@@ -41,6 +47,7 @@ pub fn recipe_login_guard() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_search_box() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_sliding_log("typeahead", 20, 1000)
@@ -53,6 +60,7 @@ pub fn recipe_search_box() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_crawler_politeness() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_token_bucket("host-bucket", 2, 1, 1000)
@@ -65,6 +73,7 @@ pub fn recipe_crawler_politeness() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_webhook_dispatch() -> LimiterRecipe {
   let engine = PolicyEngine::any()
   engine.add_token_bucket("normal", 5, 2, 1000)
@@ -77,6 +86,7 @@ pub fn recipe_webhook_dispatch() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_email_sender() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_fixed_window("per-minute", 120, 60000)
@@ -89,6 +99,7 @@ pub fn recipe_email_sender() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_sms_sender() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_fixed_window("per-minute", 20, 60000)
@@ -101,6 +112,7 @@ pub fn recipe_sms_sender() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_image_renderer() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_token_bucket("render-burst", 4, 1, 1000)
@@ -113,6 +125,7 @@ pub fn recipe_image_renderer() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_checkout_guard() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_sliding_log("checkout", 3, 10000)
@@ -125,6 +138,7 @@ pub fn recipe_checkout_guard() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_password_reset() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_fixed_window("reset-hour", 3, 3600000)
@@ -137,6 +151,7 @@ pub fn recipe_password_reset() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_batch_import() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_token_bucket("import-rate", 50, 10, 1000)
@@ -149,6 +164,7 @@ pub fn recipe_batch_import() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_tenant_fairness() -> LimiterRecipe {
   let engine = PolicyEngine::all()
   engine.add_token_bucket("tenant-burst", 20, 5, 1000)
@@ -161,6 +177,7 @@ pub fn recipe_tenant_fairness() -> LimiterRecipe {
   }
 }
 
+///|
 pub fn recipe_all() -> Array[LimiterRecipe] {
   [
     recipe_api_gateway(),
@@ -178,6 +195,7 @@ pub fn recipe_all() -> Array[LimiterRecipe] {
   ]
 }
 
+///|
 pub fn recipe_names() -> Array[String] {
   let names : Array[String] = []
   for recipe in recipe_all() {
@@ -186,6 +204,7 @@ pub fn recipe_names() -> Array[String] {
   names
 }
 
+///|
 pub fn recipe_markdown_index() -> String {
   let mut out = "# MoonLimit Recipes\n"
   for recipe in recipe_all() {
